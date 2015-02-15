@@ -1,10 +1,15 @@
-1. Mikey
+# Mikey
 
 Mikey is a simple Node.js module for accessing inline microphone controls.
 
 Mikey exposes an `EventEmitter` API to listen to inline microphone controls events.
 
-Example usage:
+Currently Mikey works only on Mac OS X.
+
+NOTE: when the module is loaded, it captures all Mikey events at system (OS) level,
+excluding all the other applications from receiving the events.
+
+## Example usage:
 
 ````JavaScript
 var mikey = require('mikey');
@@ -14,7 +19,7 @@ mikey.addListener('playPause', function(){
 });
 ````
 
-Currently Mikey works only on Mac OS X.
 
-NOTE: when the module is loaded, it captures all Mikey events at system (OS) level,
-excluding all the other applications from receiving the events.
+## LICENSE
+
+Mikey is released under the [MIT license](http://en.wikipedia.org/wiki/MIT_License).
