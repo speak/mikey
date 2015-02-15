@@ -1,0 +1,39 @@
+{
+  "name": "mikey",
+  "version": "0.0.1",
+  "description": "simple to use API to register for Apple Mikey Device (headphones button presses) events",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "os": [
+    "darwin"
+  ],
+  "gypfile": true,
+  "keywords": [
+    "headphones",
+    "mikey",
+    "microphone",
+    "button",
+    "controls",
+    "key",
+    "events",
+    "apple",
+    "mac",
+    "osx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/speak/mikey"
+  },
+  "author": "Marco Fabbri <mrfabbri@gmail.com> (http://mrfabbri.org)",
+  "contributors": [
+    "Tom Moor <tom@sqwiggle.com> (http://tommoor.com)"
+  ],
+  "license": "MIT",
+  "engines": { "node" : ">=0.10.0" },
+  "dependencies": {
+    "bindings": "^1.2.1",
+    "nan": "~1.5.3"
+  }
+}
