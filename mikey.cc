@@ -46,9 +46,34 @@ namespace mikey {
     static MikeyManager *instance;
 
     bool hasCallback;
-    void InitHIDManager() { /* @TODO(mrfabbri) */ }
     NanCallback *callback;
 
+    void InitHIDManager() {
+      IOHIDManagerRef hidManager;
+
+      hidManager = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
+      if (!hidManager) {
+        fprintf(stderr, "%s: Failed to instantiate IOHIDManager\n", __PRETTY_FUNCTION__);
+      }
+
+      IOHIDManagerSetDeviceMatching(hidManager, IOServiceMatching("AppleMikeyHIDDriver"));
+      IOHIDManagerScheduleWithRunLoop(hidManager, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+
+      if (IOHIDManagerOpen(hidManager, kIOHIDOptionsTypeSeizeDevice) == kIOReturnError) {
+        fprintf(stderr, "%s: Failed to open IOHIDManager\n", __PRETTY_FUNCTION__);
+      }
+
+      IOHIDManagerRegisterInputValueCallback(hidManager, ValueCallback, NULL);
+    }
+    static void ValueCallback(void *context, IOReturn result, void *sender, IOHIDValueRef value) {
+      MikeyManager::GetInstance()->SendKeyEvent("playPause");
+
+      uint32_t usage = IOHIDElementGetUsage(IOHIDValueGetElement(value));
+      long val = IOHIDValueGetIntegerValue(value);
+      if (usage == 0x89 && val == 1) {
+        MikeyManager::GetInstance()->SendKeyEvent("playPause");
+      }
+    }
   };
 
   // initializing singleton reference pointer (not the instance)
