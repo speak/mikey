@@ -9,9 +9,10 @@ namespace mikey {
   class MikeyManager {
   public:
     void SendKeyEvent(const char *keyEvent) {
+      NanScope();
+
       if (hasCallback) {
         Handle<Value> argv[] = { NanNew<String>(keyEvent) };
-        //(new NanCallback(callback))->Call(1, argv);
         callback->Call(1, argv);
       }
     }
@@ -65,9 +66,8 @@ namespace mikey {
 
       IOHIDManagerRegisterInputValueCallback(hidManager, ValueCallback, NULL);
     }
-    static void ValueCallback(void *context, IOReturn result, void *sender, IOHIDValueRef value) {
-      MikeyManager::GetInstance()->SendKeyEvent("playPause");
-
+    static void ValueCallback(void *context, IOReturn result, void *sender, IOHIDValueRef value)
+    {
       uint32_t usage = IOHIDElementGetUsage(IOHIDValueGetElement(value));
       long val = IOHIDValueGetIntegerValue(value);
       if (usage == 0x89 && val == 1) {
