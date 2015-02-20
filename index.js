@@ -44,7 +44,8 @@ emitter.sendKeyEvent = function (event) {
 };
 
 var mikeyListener = function mikeyListener(usageCode) {
-  emitter.emit(keyEvents[usageCode]);
+  var keyEvent = keyEvents[usageCode];
+  emitter.emit(keyEvent) || mikey.sendBackKeyEvent(usageCode);
 }
 mikey.setListener(mikeyListener);
 

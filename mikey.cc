@@ -2,6 +2,7 @@
 #include <IOKit/hid/IOHIDLib.h>
 #include <IOKit/IOKitLib.h>
 #include <Carbon/Carbon.h>
+#include "sound_up.h"
 
 using namespace v8;
 
@@ -62,7 +63,6 @@ namespace mikey {
     bool secureEventInputWasEnabled;
 
     void StartHIDManager() {
-
       hidManager = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
       if (!hidManager) {
         fprintf(stderr, "%s: Failed to instantiate IOHIDManager\n", __PRETTY_FUNCTION__);
@@ -128,6 +128,31 @@ namespace mikey {
     NanReturnUndefined();
   }
 
+  NAN_METHOD(SendBackKeyEvent) {
+    NanScope();
+
+    uint32_t usage = args[0]->Uint32Value();
+    switch (usage) {
+      case kMikeyPlayPauseUsageCode:
+        HIDPostAuxKey(NX_KEYTYPE_PLAY);
+        break;
+      case kMikeyPrevUsageCode:
+        HIDPostAuxKey(NX_KEYTYPE_FAST);
+        break;
+      case kMikeyNextUsageCode:
+        HIDPostAuxKey(NX_KEYTYPE_REWIND);
+        break;
+      case kMikeySoundUpUsageCode:
+        HIDPostAuxKey(NX_KEYTYPE_SOUND_UP);
+        break;
+      case kMikeySoundDownUsageCode:
+        HIDPostAuxKey(NX_KEYTYPE_SOUND_DOWN);
+        break;
+    }
+
+    NanReturnUndefined();
+  }
+
   // emulate 
   NAN_METHOD(SendKeyEvent) {
     NanScope();
@@ -141,6 +166,7 @@ namespace mikey {
   void Init(Handle<Object> exports) {
     NODE_SET_METHOD(exports, "setListener", SetListener);
     // exports->Set(NanNew("addListener"), NanNew<FunctionTemplate>(SetListener)->GetFunction());
+    NODE_SET_METHOD(exports, "sendBackKeyEvent", SendBackKeyEvent);
     NODE_SET_METHOD(exports, "sendKeyEvent", SendKeyEvent);
   }
 
