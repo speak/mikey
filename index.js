@@ -11,6 +11,10 @@
  *
  * Events:
  * `"playPause"`
+ * `"next"`
+ * `"prev"`
+ * `"soundUp"`
+ * `"soundDown"`
  * 
  * NOTE: loading the module taps all Mikey events at system (OS) level,
  * excluding all the other applications.
@@ -21,12 +25,26 @@
 var mikey = require("bindings")("mikey");
 var EventEmitter = require("events").EventEmitter;
 
-var emitter = new EventEmitter();
-/* @param {String} keyEvent - for testing purposes */
-emitter.sendKeyEvent = mikey.sendKeyEvent;
+var keyEvents = {
+  0x89: "playPause",
+  0x8A: "next",
+  0x8B: "prev",
+  0x8C: "soundUp",
+  0x8D: "soundDown"
+};
 
-var mikeyListener = function mikeyListener(keyEvent) {
-  emitter.emit(keyEvent);
+var usageCodes = {};
+for (var k in keyEvents) { usageCodes[keyEvents[k]] = k; }
+
+var emitter = new EventEmitter();
+
+/* @param {String} event - for testing purposes */
+emitter.sendKeyEvent = function (event) {
+  mikey.sendKeyEvent(usageCodes[event]);
+};
+
+var mikeyListener = function mikeyListener(usageCode) {
+  emitter.emit(keyEvents[usageCode]);
 }
 mikey.setListener(mikeyListener);
 

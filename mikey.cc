@@ -6,14 +6,20 @@
 using namespace v8;
 
 namespace mikey {
+  const int kMikeyPlayPauseUsageCode  = 0x89;
+  const int kMikeyNextUsageCode       = 0x8A;
+  const int kMikeyPrevUsageCode       = 0x8B;
+  const int kMikeySoundUpUsageCode    = 0x8C;
+  const int kMikeySoundDownUsageCode  = 0x8D;
+
   // Singleton Manager for Apple MiKey HID
   class MikeyManager {
   public:
-    void SendKeyEvent(const char *keyEvent) {
+    void SendKeyEvent(uint32_t usage) {
       NanScope();
 
       if (hasCallback) {
-        Handle<Value> argv[] = { NanNew<String>(keyEvent) };
+        Handle<Value> argv[] = { NanNew<Number>(usage) };
         callback->Call(1, argv);
       }
     }
@@ -77,6 +83,12 @@ namespace mikey {
       CFRelease(hidManager);
       hidManager = NULL;
     }
+    /*
+     Every time Apple's SecureEventInputs gets enabled, Mikey IOHIDManager loses
+     exclusive access, so other apps (read iTunes) gets notified as well from
+     Mikey device related events. Hence, Mikey IOHIDManger is restarted to re-acquire
+     exclusive access.
+   */
     void StartSecureEventInputCheckTimer() {
       secureTimer = CFRunLoopTimerCreate(kCFAllocatorDefault,
         CFAbsoluteTimeGetCurrent(), 1, 0, 0, CheckIsSecureEventInputEnabled, NULL);
@@ -91,8 +103,9 @@ namespace mikey {
     static void ValueCallback(void *context, IOReturn result, void *sender, IOHIDValueRef value) {
       uint32_t usage = IOHIDElementGetUsage(IOHIDValueGetElement(value));
       long val = IOHIDValueGetIntegerValue(value);
-      if (usage == 0x89 && val == 1) {
-        MikeyManager::GetInstance()->SendKeyEvent("playPause");
+      // val can be in [0, 1, 2, 3], but 1 is always the first data coming; 'down' event.
+      if (val == 1 && kMikeyPlayPauseUsageCode <= usage && usage <= kMikeySoundDownUsageCode) {
+        MikeyManager::GetInstance()->SendKeyEvent(usage);
       }
     }
   };
@@ -115,8 +128,8 @@ namespace mikey {
   NAN_METHOD(SendKeyEvent) {
     NanScope();
 
-    String::Utf8Value keyEvent(args[0]);
-    MikeyManager::GetInstance()->SendKeyEvent(*keyEvent);
+    uint32_t usage = args[0]->Uint32Value();
+    MikeyManager::GetInstance()->SendKeyEvent(usage);
 
     NanReturnUndefined();
   }
