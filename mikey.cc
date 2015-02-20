@@ -1,6 +1,7 @@
 #include <nan.h>
 #include <IOKit/hid/IOHIDLib.h>
 #include <IOKit/IOKitLib.h>
+#include <Carbon/Carbon.h>
 
 using namespace v8;
 
@@ -34,7 +35,8 @@ namespace mikey {
     // Constructor
     MikeyManager() { 
       hasCallback = FALSE;
-      InitHIDManager();
+      StartHIDManager();
+      StartSecureEventInputCheckTimer();
     }
     // Destructor
     ~MikeyManager() {}
@@ -49,8 +51,10 @@ namespace mikey {
     bool hasCallback;
     NanCallback *callback;
 
-    void InitHIDManager() {
-      IOHIDManagerRef hidManager;
+    IOHIDManagerRef hidManager;
+    CFRunLoopTimerRef secureTimer;
+
+    void StartHIDManager() {
 
       hidManager = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
       if (!hidManager) {
@@ -66,8 +70,25 @@ namespace mikey {
 
       IOHIDManagerRegisterInputValueCallback(hidManager, ValueCallback, NULL);
     }
-    static void ValueCallback(void *context, IOReturn result, void *sender, IOHIDValueRef value)
-    {
+    void StopHIDManager() {
+      if(IOHIDManagerClose(hidManager, kIOHIDOptionsTypeNone) == kIOReturnError) {
+        fprintf(stderr, "%s: Failed to close IOHIDManager\n", __PRETTY_FUNCTION__);
+      }
+      CFRelease(hidManager);
+      hidManager = NULL;
+    }
+    void StartSecureEventInputCheckTimer() {
+      secureTimer = CFRunLoopTimerCreate(kCFAllocatorDefault,
+        CFAbsoluteTimeGetCurrent(), 1, 0, 0, CheckIsSecureEventInputEnabled, NULL);
+      CFRunLoopAddTimer(CFRunLoopGetCurrent(), secureTimer, kCFRunLoopDefaultMode);
+    }
+    static void CheckIsSecureEventInputEnabled(CFRunLoopTimerRef timer, void *info) {
+      if (IsSecureEventInputEnabled()) {
+        MikeyManager::GetInstance()->StopHIDManager();
+        MikeyManager::GetInstance()->StartHIDManager();
+      }
+    }
+    static void ValueCallback(void *context, IOReturn result, void *sender, IOHIDValueRef value) {
       uint32_t usage = IOHIDElementGetUsage(IOHIDValueGetElement(value));
       long val = IOHIDValueGetIntegerValue(value);
       if (usage == 0x89 && val == 1) {
