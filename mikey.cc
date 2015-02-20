@@ -59,6 +59,7 @@ namespace mikey {
 
     IOHIDManagerRef hidManager;
     CFRunLoopTimerRef secureTimer;
+    bool secureEventInputWasEnabled;
 
     void StartHIDManager() {
 
@@ -95,7 +96,10 @@ namespace mikey {
       CFRunLoopAddTimer(CFRunLoopGetCurrent(), secureTimer, kCFRunLoopDefaultMode);
     }
     static void CheckIsSecureEventInputEnabled(CFRunLoopTimerRef timer, void *info) {
-      if (IsSecureEventInputEnabled()) {
+      bool secureEventInputIsEnabled = IsSecureEventInputEnabled();
+      bool secureEventInputWasEnabled = MikeyManager::GetInstance()->secureEventInputWasEnabled;
+      if (secureEventInputIsEnabled != secureEventInputWasEnabled) {
+        MikeyManager::GetInstance()->secureEventInputWasEnabled = secureEventInputIsEnabled;
         MikeyManager::GetInstance()->StopHIDManager();
         MikeyManager::GetInstance()->StartHIDManager();
       }
