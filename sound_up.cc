@@ -13,8 +13,10 @@
 io_connect_t get_event_driver(void)
 {
     static  mach_port_t sEventDrvrRef = 0;
-    mach_port_t masterPort, service, iter;
-    kern_return_t    kr;
+    mach_port_t masterPort;
+    io_iterator_t iter;
+    io_object_t service;
+    kern_return_t kr;
     
     if (!sEventDrvrRef)
     {
@@ -34,17 +36,23 @@ io_connect_t get_event_driver(void)
             fprintf(stderr, "%s\n", "IOServiceGetMatchingServices failed.");
             return 0;
         }
+
+        if (!IOIteratorIsValid( iter ))
+        {
+          fprintf(stderr, "%s\n", "IOIterator is not valid");
+          return 0;
+        }
         
         service = IOIteratorNext( iter );
-        // NSCAssert(, @"IOIteratorNext failed.");
-        if (KERN_SUCCESS != service)
+        // NSCAssert(service, @"IOIteratorNext failed.");
+        if (!service)
         {
             fprintf(stderr, "%s\n", "IOIteratorNext failed.");
             return 0;
         }
         
         kr = IOServiceOpen( service, mach_task_self(),
-                           kIOHIDParamConnectType, &sEventDrvrRef );
+                            kIOHIDParamConnectType, &sEventDrvrRef );
         // NSCAssert((KERN_SUCCESS == kr), @"IOServiceOpen failed.");
         if (KERN_SUCCESS != kr)
         {
